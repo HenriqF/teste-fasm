@@ -35,11 +35,32 @@ section '.data' data readable writeable
     hStdOut dd ?
 
 
+    tentativas dd 6
     playing dd 1
     vitoria dd 0
 
 
 section '.code' code readable executable
+
+    char_in_backup_string:
+        mov ebx, [esp+4]
+        mov dl , [input_buffer+ebx]
+
+        mov eax, 0 
+        cib_loop:
+            .if eax = 5
+                jmp cib_end_loop
+            .endif
+
+            .if dl = [backup_keyword + eax]
+                jmp cib_end_loop
+            .endif
+
+            add eax, 1
+            jmp cib_loop
+        cib_end_loop:
+        ret 4
+
 
     compare_strings:
         mov eax, 0
@@ -84,13 +105,16 @@ section '.code' code readable executable
 
         game_loop:
 
+            .if [tentativas] = 0
+                jmp end_game
+            .endif
+
             call get_word_input
             call compare_strings
             .if eax = 5
                 mov [vitoria], 1
                 jmp end_game
             .endif
-
 
             mov eax, 0
             create_backup_loop:
@@ -104,8 +128,6 @@ section '.code' code readable executable
 
             cb_end_loop:
                 
-
-
             mov eax, 0
             check_full_correct_loop:
                 .if eax = 5
@@ -126,8 +148,33 @@ section '.code' code readable executable
                 jmp check_full_correct_loop
 
             cfc_end_loop:
-                invoke WriteConsole, [hStdOut], truth_buffer, [truth_buffer_len], bytes_written, 0
-                invoke WriteConsole, [hStdOut], new_line, new_line_len, bytes_written, 0
+                
+            mov eax, 0
+            check_half_correct_loop:
+                .if eax = 5
+                    jmp chc_end_loop
+                .endif
+
+                push eax
+                push eax
+                call char_in_backup_string
+                mov ebx, eax
+                pop eax
+
+                .if ebx <> 5
+                    mov byte [backup_keyword + ebx], '*'
+                    mov byte [truth_buffer + eax], '*'
+                .endif
+
+                add eax, 1
+                jmp check_half_correct_loop
+            chc_end_loop:
+
+            invoke WriteConsole, [hStdOut], truth_buffer, [truth_buffer_len], bytes_written, 0
+            invoke WriteConsole, [hStdOut], new_line, new_line_len, bytes_written, 0
+
+
+            sub [tentativas], 1
 
             jmp game_loop
 
