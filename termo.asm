@@ -100,8 +100,12 @@ section '.code' code readable executable
                 mov dl, [keyword + eax]
                 mov [backup_keyword + eax], dl
                 add eax, 1
+                jmp create_backup_loop
+
             cb_end_loop:
                 
+
+
             mov eax, 0
             check_full_correct_loop:
                 .if eax = 5
@@ -124,7 +128,6 @@ section '.code' code readable executable
             cfc_end_loop:
                 invoke WriteConsole, [hStdOut], truth_buffer, [truth_buffer_len], bytes_written, 0
                 invoke WriteConsole, [hStdOut], new_line, new_line_len, bytes_written, 0
-
 
             jmp game_loop
 
